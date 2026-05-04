@@ -8,13 +8,13 @@ class Actor(nn.Module):
         super().__init__()
 
         self.net = nn.Sequential(
-            nn.Linear(obs_dim, 16),
+            nn.Linear(obs_dim, 64),
             nn.ReLU(),
-            nn.Linear(16, 16),
+            nn.Linear(64, 64),
             nn.ReLU(),
         )
 
-        self.mu = nn.Linear(16, act_dim)
+        self.mu = nn.Linear(64, act_dim)
         self.log_std = nn.Parameter(torch.zeros(act_dim))
 
     def forward(self, obs):
@@ -41,3 +41,22 @@ class Actor(nn.Module):
         mu = self.mu(x)
 
         return torch.tanh(mu) * 2.0
+
+
+class Critic(nn.Module):
+    def __init__(self, obs_dim):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(obs_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.ReLU(),
+        )
+
+        self.value = nn.Linear(64, 1)
+
+    def forward(self, obs):
+        x = self.net(obs)
+        v = self.value(x)
+        return v
