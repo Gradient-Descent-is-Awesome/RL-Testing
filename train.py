@@ -1,6 +1,6 @@
 import gymnasium as gym
 
-from config import buffer_size
+from config import batch_size, buffer_size
 from models import Actor, Critic
 from utils import RolloutBuffer
 
@@ -17,7 +17,7 @@ buffer = RolloutBuffer()
 obs, _ = env.reset()
 
 finish = False
-total_reward = 0
+total_reward = 0.0
 
 while not finish:
     act = env.action_space.sample()
@@ -31,12 +31,12 @@ while not finish:
     total_reward += rew
     episode_over = term or trun
 
-    buffer.add(obs, act, rew, [0], rew, episode_over)
+    buffer.add(obs, act, rew, [0.0], rew, episode_over)
     print(buffer.size())
 
-    if buffer.size() >= 2048:
+    if buffer.size() >= buffer_size:
         print("Training model, buffer size reached 2048")
-        for i, batch in enumerate(buffer.batch(64)):
+        for i, batch in enumerate(buffer.batch(batch_size)):
             states, actions, rewards, log_probs, values, dones = batch
             print(f"Batch {i}: {states.shape}, {actions.shape}")
 
