@@ -35,7 +35,7 @@ while not finish:
     print(buffer.size())
 
     if buffer.size() >= buffer_size:
-        print("Training model, buffer size reached 2048")
+        print(f"Training model, buffer size reached {buffer.size()}")
         for i, batch in enumerate(buffer.batch(batch_size)):
             states, actions, rewards, log_probs, values, dones = batch
             print(f"Batch {i}: {states.shape}, {actions.shape}")
