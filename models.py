@@ -29,13 +29,11 @@ class Actor(nn.Module):
         dist = Normal(mu, std)
         raw_action = dist.rsample()
 
-        tanh_action = torch.tanh(raw_action) * 2.0
+        action = torch.tanh(raw_action) * 2.0
 
         log_prob = dist.log_prob(raw_action).sum(dim=-1)
 
-        log_prob -= torch.log(1 - torch.tanh(raw_action).pow(2) + 1e-6).sum(dim=-1)
-
-        return tanh_action, log_prob
+        return action, log_prob
 
     def evaluate(self, obs, action):
         mu, std = self.forward(obs)
@@ -48,8 +46,6 @@ class Actor(nn.Module):
         raw_action = torch.atanh(scaled_action)
 
         log_prob = dist.log_prob(raw_action).sum(dim=-1)
-
-        log_prob -= torch.log(1 - torch.tanh(raw_action).pow(2) + 1e-6).sum(dim=-1)
 
         entropy = dist.entropy().sum(dim=-1)
 
