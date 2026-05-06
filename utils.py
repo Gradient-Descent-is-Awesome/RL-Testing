@@ -72,6 +72,9 @@ class Trainer:
         self.batch_size = batch_size
         self.n_epoch = n_epoch
 
+        self.clip_eps = 0.2
+        self.entropy_coef = 0.0
+
     def update(self, buffer, next_state):
         states, actions, rewards, log_probs, values, dones = buffer.get_all()
 
@@ -83,7 +86,6 @@ class Trainer:
         returns = torch.tensor(returns, dtype=torch.float32)
 
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-        returns = (returns - returns.mean()) / (returns.std() + 1e-8)
 
         states = torch.tensor(states, dtype=torch.float32)
         actions = torch.tensor(actions, dtype=torch.float32)
@@ -95,7 +97,7 @@ class Trainer:
         critic_loss_sum = 0.0
         step_count = 0
 
-        for epoch in range(self.n_epoch):
+        for _ in range(self.n_epoch):
             idx = torch.randperm(dataset_size)
 
             for start in range(0, dataset_size, self.batch_size):
@@ -107,20 +109,20 @@ class Trainer:
                 batch_advantages = advantages[batch_idx]
                 batch_returns = returns[batch_idx]
 
-                dist, new_log_probs, entropy = self.actor.evaluate(
+                new_log_probs, entropy = self.actor.evaluate(
                     batch_states, batch_actions
                 )
 
                 ratio = torch.exp(new_log_probs - batch_old_log_probs)
 
-                clip_eps = 0.2
-                clipped_ratio = torch.clamp(ratio, 1 - clip_eps, 1 + clip_eps)
+                surr1 = ratio * batch_advantages
+                surr2 = (
+                    torch.clamp(ratio, 1 - self.clip_eps, 1 + self.clip_eps)
+                    * batch_advantages
+                )
 
-                actor_loss = -torch.min(
-                    ratio * batch_advantages, clipped_ratio * batch_advantages
-                ).mean()
-
-                actor_loss -= 0.01 * entropy.mean()
+                actor_loss = -torch.min(surr1, surr2).mean()
+                actor_loss -= self.entropy_coef * entropy.mean()
 
                 values_pred = self.critic(batch_states).squeeze()
                 critic_loss = F.mse_loss(values_pred, batch_returns)

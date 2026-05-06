@@ -8,10 +8,10 @@ from config import actor_lr, batch_size, buffer_size, critic_lr, n_epoch, total_
 from models import Actor, Critic
 from utils import RolloutBuffer, Trainer
 
-env = gym.make("Pendulum-v1")
+env = gym.make("BipedalWalker-v3")
 
-actor = Actor(3, 1)
-critic = Critic(3)
+actor = Actor(24, 4)
+critic = Critic(24)
 
 actor_optim = torch.optim.Adam(actor.parameters(), lr=actor_lr)
 critic_optim = torch.optim.Adam(critic.parameters(), lr=critic_lr)
@@ -35,7 +35,6 @@ while current_steps < total_steps:
     buffer.clear()
     episode_reward = 0
 
-    # 🔥 COLLECT FIXED ROLLOUT (NO EPISODE DEPENDENCY)
     while buffer.size() < buffer_size and current_steps < total_steps:
         state = torch.tensor(obs, dtype=torch.float32)
 
@@ -75,7 +74,7 @@ while current_steps < total_steps:
     print(f"Last 100 reward mean: {np.mean(last_100_rewards):.2f}")
     print("Actor loss:", actor_loss)
     print("Critic loss:", critic_loss)
-    print("Actor STD:", torch.exp(actor.log_std).item())
+    print("Actor STD:", torch.exp(actor.log_std).tolist())
     print("==============================\n")
 
 print("\n========== TRAINING DONE ==========")
